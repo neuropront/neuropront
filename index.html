@@ -471,7 +471,7 @@
       <div class="form-row cols-2">
         <div class="form-group">
           <label>Nome completo <span style="color:red">*</span>
-            <input type="text" name="full_name" required placeholder="Dr(a). Nome Sobrenome">
+            <input type="text" name="display_name" required placeholder="Dr(a). Nome Sobrenome">
           </label>
         </div>
         <div class="form-group">
@@ -483,7 +483,7 @@
       <div class="form-row cols-2">
         <div class="form-group">
           <label>Título / Especialidade
-            <input type="text" name="title" placeholder="Médico(a) Neurologista">
+            <input type="text" name="specialty" placeholder="Médico(a) Neurologista">
           </label>
         </div>
         <div class="form-group">
@@ -529,8 +529,8 @@
         </div>
       </div>
       <div class="form-row">
-        <label>Site / URL de verificação
-          <input type="url" name="site" placeholder="https://seuconsultorio.com.br">
+        <label>Site
+          <input type="url" name="website" placeholder="https://seuconsultorio.com.br">
         </label>
       </div>
       <button type="submit" class="btn-primary" style="width:100%;margin-top:8px;" id="btn-save-setup">Salvar e começar</button>
@@ -730,22 +730,23 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let _dp = {};
 const dp = (k, fallback = '') => (_dp[k] !== undefined && _dp[k] !== null && _dp[k] !== '') ? _dp[k] : fallback;
 function loadDoctorProfile(profile) {
+  // Colunas reais do BD: display_name, specialty, website
   const uf  = (profile.crm_uf     || '').toUpperCase();
   const num = (profile.crm_number || '');
   _dp = {
-    name:        profile.full_name    || '',
-    legalName:   profile.legal_name   || profile.full_name || '',
-    title:       profile.title        || 'Médico Neurologista',
+    name:        profile.display_name || '',
+    legalName:   profile.legal_name   || profile.display_name || '',
+    title:       profile.specialty    || 'Médico(a) Neurologista',
     crm:         uf && num ? `CRM-${uf} ${num}` : '',
     crmNumber:   num,
     crmUf:       uf,
     rqe:         profile.rqe ? `RQE ${profile.rqe}` : '',
-    address:     profile.address      || '',
-    city:        profile.city         || '',
-    phone:       profile.phone        || '',
-    email:       profile.email        || '',
-    site:        profile.site         || '',
-    verifyBase:  profile.verify_base_url || (window.location.origin + '/verificar'),
+    address:     profile.address  || '',
+    city:        profile.city     || '',
+    phone:       profile.phone    || '',
+    email:       profile.email    || '',
+    site:        profile.website  || '',
+    verifyBase:  window.location.origin + '/verificar',
   };
 }
 const BRAIN_ICON_B64    = 'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAgKADAAQAAAABAAAAgAAAAABrRiZNAAAZVklEQVR4Ae2dBbAcxdPAB3eHECAQ3N0J7sEdCg0S3K1wCO7uENwpLLgHKSBIcHcP7m779W/+37zat9czO/tu9+5e3nXV3e72+EzvTE93T+8oiYAZyYEmvvPOO+bNN980H374of199NFH5uOPPzY///yz+e2338yvv/5qr3/99ZcZa6yxzNhjj21/E000kZliiilMr169zLTTTmtmmGEGM9NMM5m5557b9O3bt9v33CgjIwEwmEOHDjVPP/20/T377LPmhx9+KH2wJpxwQrPAAguYfv36mSWXXNIss8wyZoIJJii9nCozHGkI4PPPPzd33nmnuf32281DDz1k/vjjjyr7Tc17jDHGsISwxhprmI022qh7zBDMAN0VZLpObrzxxmSFFVZIRhllFJaylvottthiyQUXXJD89NNPLdvFpmVrFqjYZ599lhx88MFJ7969W2rAfQQ43njjJTvttFPy9ttvB1rVnKBuRQBff/11su+++ybCoHWLgc8SxKijjprI0pAIQ9qc0VZK7RY8AJz6SSedZM444wzzyy+/qOtvHhLOfr755jOzzz67mX766e0PLh7uftxxx7U/eVPNmGOOafmHP//80/z+++/m22+/NV999ZWBx/jggw/Me++9Z1577TW7o2DH0BWAV5AZwRx++OFm8skn70oW5aVRiKKlUHfffXcy3XTTFX7jhRu3b9s555yTPPPMM4kMaKntgv8YPnx4ctZZZyUbbLBBQnkyKoV+ssVMhLCTf/75p9S6FcmsZZeAb775Jtliiy0Kdajs15Ndd901ue+++0of8LxOhcDuueceu9ZPM800heq9xBJLNG1ZaEkCeOyxx5Ipp5wyuhOXXXbZ5Lrrrmv4oPuI4t9//03uuOOOZNVVV43encAosmNoNLQcAZx99tmJrJG5g8+2D4bq1VdfbXSfFSoPzn+PPfaIZlzXXXfdRPicQmXUE7llCEAEN8mAAQNyB551VgQtyfPPP19PuxueVkTPdkmLkVcsuOCCCVvdRkBLEIDI4pNVVlkld/BFFp/AFHZngHBFZJzb1j59+iQvvvhi5U1tOgGI3N5K8kIcNG/NLrvs0tIStSIj9d9//yWnnXZaIlvTICGws3j88ceLZF04blMJQPb3uW/DxBNP3O3fet+owL/MP//8QSIQhVPy3HPP+bKoG980AoBTXmuttYKNF5Vr07ZHdfdsZAZsHzfffPNgP0w22WSVMbtNI4ADDzww2Oj+/fs3lBvOjpfYCiTXXnttItLH5LLLLqtsAFy5IhUM9sdUU02ViCTSRS/t2hQCuPrqq4ONXXPNNRN2BWUCGjkxCLHcNbOPDxj4tddeW92/L7LIIskTTzzhS1o3/oorrkhGG200b9+I7UEi4um6y0ln0HACEDl6cE+8zjrrlCrQueWWWxIx1khQxDhGkykV7Vx2q8VaO+mkk3bEc/HT19FHHz25/PLL031Y6v2VV16pEp+rw7bbbltqeQ0lAGTe6MhdY7JXsawpbfCR1W+22WbesigbLhuxsYOllloqGN/Vl7f0ySefdMnsdcSIEVZFLQqnBMZNlDzJ0ksvbZeQooKd888/P1iPwYMHdyq7noeGEsDJJ5/sbRgKny+//LKetnRKu/XWW3vLcgPJVbR/iZiO2bT33ntvVBrSsRw4uP766xNEuel80/fIL4YNG+aiR12PP/54b36ow994442ofPIiNYwA3nrrLe/UL+rYwkIPeAS0fEOGDEkeffTRTjKCBx54wNt56YFx9+w22JsD3Dt83tUNQh4XTz7jjz9+4TYi6vbVAWGSq3PeIIfCG0YAiG99jUGlGguin092331326Hp/HiTv//+e5vNeuut5y0rnSZ9L3aENi2WRml86J71Gjj22GOj0sw777xJiAG1maX+YFzFfsGb98UXX5yK3bXbhhDAww8/7G0E62QsJcPF+2wD2CY5QHgUGjgt7NBDD7XJb7rppui0Rx11lE1z4oknRqe56667XDWjrjDNzJBanSeZZJLkiy++iMrHF6khBMAgaw0YZ5xxogU9MFJik6/mQ95zzjmnbSNvjVZWHg5FFKARK7PLjjvumMw444yd8sagg91E3s4hXfZuu+1myynyh9FIOo/0/Q477FAkq5q4lRMAsux0hdP3CINi4aCDDvLmQ55szy688EKrek2XEXsP145NgbZ8sJsAxOQ8WIeYslZbbbXYJnfE+/vvv70iY1Tn9QiIKieA9ddfX+00tkqs5zHAEjHzzDOr+cR0uovDlIn1DYIe5A1sO2OWC0TWwKeffhrco7tyQlfMxwAMXLEgiu0DGN60LCNdRj2ygUoJgA7jzUxX1t0PGjTIdkSRPzrtmmuuSVZaaSU1T5d3+sqbDWP30ksvqbwGTBkWSCH5BETiJJN5+ot02do9Il/gtttus21AI7jddttFbYG32WYbtd308bvvvlukKzviVkoAvr0sTI0c1eqoRFdu7r///uC5AFTI++yzT4LGMQ0//vhjwpaULZzbNRB+ww03qJ3rBhHhDCBnC6NmDZcue+VNBvbee+9O5WFHCJMbArFI9r5QO++8cyipN6xSAphnnnk6NdJ1hmO4vLWSAAYIG4BZZ501gVnE4HPllVdOLr300oQ1EWCG0XYFvBGcGHLAGrnXXnsls802W019wDEYeUsMDB96AuCpp56y0j7XniJXbAUxeNUOtcwyyywJxjEhGDhwYE0bKJ8lFduKolAZAfCW+ToGwU0ImDlCdoHsp92Ut+KKK9aUw+ERAELZf//9g3n56qjhkf65mYvDHYsuumhN2Vq6LM63LBKPLWUImIF8CiNejqJQGQFg8ZJtOM+8aSE45phj1HTZvJDjYzuXxfO83HLLJS+//HLiY0C1NLE48nQAc3rrrbfamSnPuic2fySReQATq+W3+OKL5yWtCa+MADCJ1irp3s6amggCGzgfp6vl1WgcROesc+Al0oCcAlXxzTffnMDgxhh/avVndsg7KCKnoNW+JT8nnk7XLXRfCQHQADpLa2DIqDNPe6fl1yicHCGzaz+dyTIwxxxz2CUA24Yso0mcqaeeWm1/TH21/MjTATsXFExaXnlLiMvDXSshgBdeeEGtHOt6SDXKPl1rVDNx1BnNohO5MjhZtTGSwoUXXjiBuYWhDClxtLbAYKLAQhvJljUGfDoLpK5FoBICgBnRGkrH+YApVUtTJo6OhotmDw5Hj80A+3sYK3QAW221VSe1LstR+uAJjCf6/iJ1WmihhZLll1/eK88nr7nmmkuVUfj6CjzqZa0eMIixwiXyqYQA2HJplQPvAwYitG4iouXoFIIdLe8QDv0567Lj4H11AI+wibeYjoQAGHS2baT3KWV8ZbMMOO0fM8cRRxzh3cczg/BWv/7666HqdYSRL8uSVjbCsliohAB8qt+8bUpW2ZJunNs6fvLJJ6q8Ph03fc8+P/0WIxNgp8FBFMJYy5HPo3BJm4hh8YOGkSUgtCVNl5W9Jx0CJjle3jEeqJ1DxiOkgQCd5LEjoXLjM3opIhSqhADQzGU7g2dEriEIWQpjP8/xKgeoSQ855BC7HmPjxxvLj0FjykW9yyA6VTPTIjJz4mh1A8daTuc7PoVlIkSUvnyyeMpE3OuEPNgpZuNkn2kDS1QIsFrOpuOZ2SQWKiEApFJaxXh7Q8CbEmIEWcMx09YsY91Aa/kjQg2pkrN1ZU1mpgBIm6fu3XjjjW29fFOyyx8dhpNibrrppmofubhc8xhChFHp+O4eQo71h1A6AUC1riLZax5F0+HI+POEKnQ00kIfICJ2xAaxMM1n65L33Ldv344lYejQoXZ28KVxZ/jEi0iuSZnbpiH3D/E8lIUI/LvvvvM10+J9L4zTOQQTS2DpBMB2SesoZgUf8FYwPbs3GyPNkCkU+TONAgg+YAzF7UvCgUq3viKvB3wKKa2OWRyiXrcWs3PwyTYQETu/P+wosP/L5uWemU1cntj5O7zvyjQfAvQjWtpYc7HSCYCpU6sQHLEPsKolzeqrr544CRtcrs+KGIcQAHE0NS4zhFsSikz9Wr2Z3p1kjrP+1FF7c5kxnAAnxMtQBrMc4NstpevBziEE++23n9rf8EcxMKoUVirINK/mJ+uSigeJc0dApIRG3jojQhEjWzAjnW/x2T9pnEXJ22E9gWbD8d4pg2RwBysEmQ0u9CxaRSOydyNTsRFtnRGbPutiFrwYsxo5NmYdU77yyitG3nybtxibBMsQRZkNFxVwMB6BspYH4+DwSgPaHgOjx0QqEkfeSjW6yLhVPEiZPjvC6BzZohlR9NhO7wj4/xv89Mq0x8xlZHrPBttn2QnYq3DxariGPOGEEwwDIlsrk20DhCmMoRFZgBFhkZGlxnoCzeYjU7v1L4w/4RCE+iKbTpRnWVSnZ5l5Oj27h6YRgKtAkSuDmQVxpJBF2ecNN9zQXmWNNyI0UeMwEIAwk2q4hhRjTSP8gxETb+sCLhtHeBvr2k3Uy0Y8kxpRSRtZz63bOsKEETSy3TMir7CzTzZ9+lnsJOyj8AtpdM09+YmMogafRtRLAKXzAOKYWV2TMOzwQRFvYE6ZFFpnHY/gY0ilA2vq6CRwrPlaeAwOC2EABtQXX2awDulgHqO7/fbb+7qsA4+UUisLRjQGSucBTj31VKlPLbCm+0AcI/mCavAi1bOOG0V2XxPmEKKytc4exdOY9ebt8KHrI488YoNFkROKFgwTUbENdzyNFpn+oS8oT7aCWhSLY8kRmwpvuAtwfId7dlfZUbnb8DWGSmLjIHmT0tQfsnwfwGUXVbL4ynF4Tu2Qb6zVDvEA0uS9ma6M7JXdAQYd2i6BuIifXRna7sXlh8CINzsW0Fm4tOmr226G8iltCWDb5WsU8u08g0em4KxQg/Nv8qbYg5jphsXcI37FjjAmrovjjodh2NFV+b/LC7kE+QlT2VEHrKGwVNK2f7SdpdAtcaFBy4b55A55QiTyKY0A0EC5xmeve+65Z7bO6jNEkPaZc8kll9h4HMHK5lnFMxJDZ1iJoUfIdi+vfHduEAuhvLiEO4NTtWNykD4NKZLJPCiFAFByaNa5NAzJVxH9NDMJJ3BQnjhvHDhajOnEMuJssskmHUwas0+etbCvTOfdy2fLn02HbSFSTWdyljdw6XAn/czmGXPcvhQCOProo70DdOaZZ6br2qX7Aw44wJt/ttFlPKOocZo7lCrMRFgfI5uPzf+iiy6ybQ3NjFpeKKKKgo/naMgSwDTjW4PY+sUogPIaXOTErtapXcFxpsG9xa5+iJ6R9WPyhlYylK8zzYKp9J2P8KUvMmNCqL58Yvq+7hkgNMUxlZcB6OezDKKv0Q7PqVnkADFeOV0a7QrxaUCdfNy3y4dDIAAEU2T2wNYhFrBgcuWlr1gvxUBdBIDbU18nMGWWCTiRTjcwdI/FrDPqiPHegd2eTzN33HHH2WZgzQRnT7s4GxDjSYT47vgZJ49DdU6HpS2I8vqQ3VU6rbvnqFkM1EUAHMBwBaavEAWHMcsEmEMkY+lytHtmClc2enq2g1o8h8OCiP0yU6nG9YuOwDaDNd2lKXLlFDJLByBCoNw8IJoioPkzoH4QdQx0mQBCZk0xIsyYymlx+AIIJmDaIPB2uiNjMEDaWcBsOndQBbvBbBjP2AEAqFe18BhcehvMjBJKg/FpEcC3oJafO9Kel1eXCADO2Lc9wmiCtbdKYHqHADlqjVDl9NNPtwKWdJmxHr/cOo3ePduRGLG4pcQ322XT+J4docGYoQ/Q4tGnTg6RbkvoHoLR8uLLKTHQJQI45ZRT1EKpSMhUK6ZCZcVh2o0RAzuLYU0JhPMn4AMxcvHxOpwlQAmkDUIW5yybtXOTTP0cqC0KW265pVo2YxQDhQkArtPnVYNGxMifYypWRhzMtPLEwe4sHe5pswPmdgAacRAXAYxb332GsOk8nauZtDEnIucBAwZEOYjQ+gQL4HQZ7j52B1aYAJhaXCHZKzbwrQa8Vb5TxNQfJgrA9Vy2PSxnobTsHABMwbJptec0Z47NHoNUROljC0v9QXw+KSDyihgoRADI6jVOmcbij7dVgY5CJo+yhTcGfQPSPqR0znwal7HaoIVwhx12mG0yU3songvDXLtMYPZyeaevIQPcbPmFCIATNOmC3D2iSOduNVtAd3lmmxl6211b3ZVOdsoWXMg5fOjKlrNMwGm1Vl6RlzGaAEJcNW/WyABi2Jlw+ETr1DQOgr/qqqtskzmD4JuG02m4TzuXKKO/fFLYIr4IowgAeTZKimyDeEbE6Q5hlNGoZueBNi50HIzBdqpeZg2NedT6CVxXdP2h/vCZvKf9I4XSExZFAL7j3jTKuT3LK6g7hSMVRPSMQoddBMwgfomwQ+SNd/Dggw+qL4VGALh1KRM4J6mVAy5GDezqEkUA+J7RCuOwhxOUuAx72pVDqFrfpHH4RcCFbZmARDRdhrt3LnNjy8olAPb1Pnl6lV/OiG1AK8RjateUSYisESa5A6Fl1pXTw27Q01e2s0Ug9/PxfDod69osiNMFI2JLa+GaDeupz7JNNpwQEt7AiFDMyJlBU+QQSGy/iTDOcPhFtrc1SYYOHWpEbF2D9yLyqAXq9YlB5ZBGwrm+eoQZeeW3w2t7wGeMAr8Cw14EcpcAMuP0q1CQ9weBEIf1ECcQVUx5RRo1ssf1HXfviuv4KAI477zzvIOvEQZCEvTgpMPBQhvK6wEMVbU+B5fngUWrRRQBMK1oTI6vIml8EbGkVsE2rnMP+LyVF+X+Xa7+81oyig44pMixaDHydKjoq2x/LLMYnaAd0dsDHEAV+wU1XMTRKj4X6Sgh5speFuuWWNGnFG6nq67ouWPq09PiaF8zoY8RVDnbw6J9ErUEZDNF+AP3jx47xiWqbE2yWbSfC/ZA6NM7nJvoKnSJALKFcd4NCxQ5q64yKByzakPXewCdA0aebkZNXzH/LmJFnK2F322HlBILODzgh6cP+XBTTTJRm9bg2oj4HqBPhw8friaQj2oY2f+rYTHIKCYwJiPi+HzeiAfO2Cza8TI9IMonI1N8Bvu/RzkUapy/JDVCBLIhBNCeASJGwhMF7p6dlAZHHnmkEftMLSgaVyoBCEOoFtyeAdRuyUWKxs96TtMiilmb6fLWL5VhQwigPQOkejzyVhhrg0MqDVAwiY2GdUqlhRfBlUoAPh5gxIgR7DaK1KtHxxVnmQZvaKKKV/sBwhDJrBpWGJndFtT77PPzy3mCNuT3AFs+9CgykOoPw1VnyZyfW36MUmcAqK/NBxR+BzslkCNqZsiQIZ1w7kEksEZOGZuQ11UXN/baMAJo8wH5QyIHa4x4W/FGFO1ql/Qx3gwloHQC8PEB7Z1AaBiMwbehmHl7I8n5Q+um1huhiwGlE4BvCWjPAP4RgknGWabPuSMOtMXXkj+DOkJKJ4D2DFBsNOD08S7umyGx/RMPYqWu++kalk4A7Rkg3b359+IOz4h/ZTUihrcMvq9P1UQFkaUTQHsGiB8B+VKZ4ZsHPhg8eLAR76u+4HLw+TvFYjH4qobUrOYnpuXFMhrJY/OlUN95C/ov9osf9XZT7rmAomQmx6qs3/1sOjlQab9+IQ4RskE97hkNH7J88Qeoth2egKmfPqsaSl8CcJmuaaiEUg0fVujpwGEO8RTiHXwx7jRy8rghg89YlE4AZOpjWnycLml6CiDoEfMutbni4s5KAcXGTw2vAtlQAujpsgA+g8MnaTTA8hpJoHgK04Irw1VCAOI5XK1w+uNQaoSRGCmnpYx8O8DIGQu1legA+BhWo6ESAuDzahqITx57cFILG9lx2PVxcFQDPkJVr2mXlm8Urt5thJbe9+EoqVAiumwtyUiN44uovXv3rtka0x+4pGmmh5VSzMK10Qt9d4dv4uChk3ODyA3waFH0VKtWZqviQt8McF9FaVbdS5cDuGlH/OgYOTjiHnOv7HnhgrF0xcwZTpjv8iEJk694qD4KcjNtkQh8CJOvoWahX79+Rr6KkkU39rlKyqvXv670hJ02cUSFpw38/XU34Did7wNUzhF1M9tU2RJAozixEloK3ADHXgcOHNjMvupS2WLdo679uI9pBT8KlewC3BzGVC6etOwHoR2univKEVkz68mi4WnlS+Fqmf3796/EfYxaWAjZJbIumAgX6XxYquhnX6TeNW8P3ja7E8Po86vgfA0W7MrSo1fGBGpEJ06Vjfj5N7wVfDYVZ0eAHG22H2HW0mi4wo6QtEwagEP4w6dd5QWoKe399983eV8Zr0lUAaKhBBCqv5g6W4IQh1OGH8QizpiNfECpJtm5555rOBTZ6oBDB81+n52OI/5mt6GU08FlNIJPvffp08f+XH7Dhg1TCUA+B+OitPSVD11rIN9J1tBNwVXKBNbbokbow+utYyi9fL9IDRYvXyq+GciWJoBmdEiZZcr3gNXs5JtBKr4ZyDYBVNjrPgMYn91khVXxZt0mAG/X1B/A7kaDXr16aeim4NoEUGG3+073YjbXKtAmgApHQqQ2au6txNy2CUAdop6DbBNAzxlrtaVtAlC7pecg2wTQc8ZabWmbANRu6TnINgH0nLFWW9oyyiC1dh4kx6tQtbY6+LaBrVTvbkkAgwYNMvzaUH8PtJeA+vuwW+fQJoBuPXz1V75NAPX3YbfOoU0A3Xr46q98mwDq78NuncP/Af7WfQA+Ym8JAAAAAElFTkSuQmCC';
@@ -1195,7 +1196,7 @@ document.getElementById('form-setup').addEventListener('submit', async (e) => {
   msgEl.innerHTML = '';
   btn.disabled = true; btn.textContent = 'Salvando...';
   const fd = new FormData(e.target);
-  const payload = { id: currentUser.id };
+  const payload = { id: currentUser.id, onboarding_done: true };
   for (const [k, v] of fd.entries()) payload[k] = v.trim() || null;
   if (payload.crm_uf) payload.crm_uf = payload.crm_uf.toUpperCase();
   const { data, error } = await sb.from('doctor_profiles').upsert(payload).select().single();
@@ -1244,14 +1245,15 @@ async function onSignedIn(user) {
   const { data: profile, error } = await sb.from('doctor_profiles').select('*').eq('id', user.id).single();
 
   // Profile incomplete or missing → show setup view
-  if (!profile || !profile.crm_number) {
+  if (!profile || !profile.onboarding_done || !profile.crm_number) {
     currentProfile = profile || {};
     hide('view-loading');
     hide('view-login');
     show('view-setup');
     if (profile) {
       const f = $('form-setup');
-      ['full_name','legal_name','title','crm_uf','crm_number','rqe','address','city','phone','email','site'].forEach(k => {
+      // mapeamento nome_campo_form → coluna real do BD
+      ['display_name','legal_name','specialty','crm_uf','crm_number','rqe','address','city','phone','email','website'].forEach(k => {
         const el = f.querySelector(`[name="${k}"]`);
         if (el && profile[k]) el.value = profile[k];
       });
@@ -1262,7 +1264,7 @@ async function onSignedIn(user) {
   currentProfile = profile;
   loadDoctorProfile(profile);
 
-  const firstName = (profile.full_name || '').split(' ')[0];
+  const firstName = (profile.display_name || '').split(' ')[0];
   $('topbar-actions').innerHTML = `
     <button class="btn-icp" id="btn-pending-global" title="Ver todos os documentos pendentes de assinatura" style="display:none;">⏳ <span id="pending-count">0</span> pendentes</button>
     <button class="btn-icp" id="btn-icp" title="Carregar certificado ICP-Brasil para assinar documentos">🔏 ICP-Brasil</button>
@@ -1305,11 +1307,11 @@ async function openProfileModal() {
     <div id="msg-profile-modal"></div>
     <form id="form-profile-modal" novalidate>
       <div class="form-row cols-2">
-        <div class="form-group"><label>Nome completo *<input type="text" name="full_name" required value="${escapeHtml(p.full_name||'')}"></label></div>
+        <div class="form-group"><label>Nome completo *<input type="text" name="display_name" required value="${escapeHtml(p.display_name||'')}"></label></div>
         <div class="form-group"><label>Nome legal<input type="text" name="legal_name" value="${escapeHtml(p.legal_name||'')}"></label></div>
       </div>
       <div class="form-row cols-2">
-        <div class="form-group"><label>Título / Especialidade<input type="text" name="title" value="${escapeHtml(p.title||'')}"></label></div>
+        <div class="form-group"><label>Título / Especialidade<input type="text" name="specialty" value="${escapeHtml(p.specialty||'')}"></label></div>
         <div class="form-group"><label>RQE<input type="text" name="rqe" value="${escapeHtml(p.rqe||'')}"></label></div>
       </div>
       <div class="form-row cols-2">
@@ -1324,7 +1326,7 @@ async function openProfileModal() {
         <div class="form-group"><label>Telefone<input type="text" name="phone" value="${escapeHtml(p.phone||'')}"></label></div>
         <div class="form-group"><label>E-mail<input type="email" name="email" value="${escapeHtml(p.email||'')}"></label></div>
       </div>
-      <div class="form-row"><label>Site<input type="url" name="site" value="${escapeHtml(p.site||'')}"></label></div>
+      <div class="form-row"><label>Site<input type="url" name="website" value="${escapeHtml(p.website||'')}"></label></div>
       <div class="btn-row" style="margin-top:16px">
         <button type="submit" class="btn-primary" id="btn-save-profile">Salvar</button>
         <button type="button" class="btn-ghost" onclick="closeModal()">Cancelar</button>
