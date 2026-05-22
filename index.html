@@ -1313,53 +1313,65 @@ async function onSignedIn(user) {
   await Promise.all([loadPatients(), loadCustomExamGroups(), loadHealthPlansDB()]);
 }
 
-async function openProfileModal() {
+function openProfileModal() {
   const p = currentProfile || {};
-  const html = `
-    <h3 style="margin:0 0 16px">Meu Perfil</h3>
-    <div id="msg-profile-modal"></div>
-    <form id="form-profile-modal" novalidate>
-      <div class="form-row cols-2">
-        <div class="form-group"><label>Nome completo *<input type="text" name="display_name" required value="${escapeHtml(p.display_name||'')}"></label></div>
-        <div class="form-group"><label>Nome legal<input type="text" name="legal_name" value="${escapeHtml(p.legal_name||'')}"></label></div>
-      </div>
-      <div class="form-row cols-2">
-        <div class="form-group"><label>Título / Especialidade<input type="text" name="specialty" value="${escapeHtml(p.specialty||'')}"></label></div>
-        <div class="form-group"><label>RQE<input type="text" name="rqe" value="${escapeHtml(p.rqe||'')}"></label></div>
-      </div>
-      <div class="form-row cols-2">
-        <div class="form-group"><label>CRM – UF *<input type="text" name="crm_uf" required maxlength="2" value="${escapeHtml(p.crm_uf||'')}"></label></div>
-        <div class="form-group"><label>CRM – Número *<input type="text" name="crm_number" required value="${escapeHtml(p.crm_number||'')}"></label></div>
-      </div>
-      <div class="form-row cols-2">
-        <div class="form-group"><label>Endereço<input type="text" name="address" value="${escapeHtml(p.address||'')}"></label></div>
-        <div class="form-group"><label>Cidade<input type="text" name="city" value="${escapeHtml(p.city||'')}"></label></div>
-      </div>
-      <div class="form-row cols-2">
-        <div class="form-group"><label>Telefone<input type="text" name="phone" value="${escapeHtml(p.phone||'')}"></label></div>
-        <div class="form-group"><label>E-mail<input type="email" name="email" value="${escapeHtml(p.email||'')}"></label></div>
-      </div>
-      <div class="form-row"><label>Site<input type="url" name="website" value="${escapeHtml(p.website||'')}"></label></div>
-      <div class="btn-row" style="margin-top:16px">
-        <button type="submit" class="btn-primary" id="btn-save-profile">Salvar</button>
-        <button type="button" class="btn-ghost" onclick="closeModal()">Cancelar</button>
-      </div>
-    </form>`;
-  openModal(html);
-  document.getElementById('form-profile-modal').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btn-save-profile');
-    btn.disabled = true; btn.textContent = 'Salvando…';
-    const fd = new FormData(e.target);
-    const payload = {};
-    for (const [k, v] of fd.entries()) payload[k] = v.trim() || null;
-    const { data, error } = await sb.from('doctor_profiles').upsert({ id: currentUser.id, ...payload }).select().single();
-    btn.disabled = false; btn.textContent = 'Salvar';
-    if (error) { document.getElementById('msg-profile-modal').innerHTML = `<div class="msg error">${escapeHtml(error.message)}</div>`; return; }
-    currentProfile = data;
-    loadDoctorProfile(data);
-    closeModal();
-    showToast('Perfil atualizado.');
+  openModal({
+    title: 'Meu Perfil',
+    size: 'md',
+    bodyHTML: `
+      <div id="msg-profile-modal"></div>
+      <form id="form-profile-modal" novalidate>
+        <div class="form-row cols-2">
+          <div class="form-group"><label>Nome completo *<input type="text" name="display_name" required value="${escapeHtml(p.display_name||'')}"></label></div>
+          <div class="form-group"><label>Nome legal<input type="text" name="legal_name" value="${escapeHtml(p.legal_name||'')}"></label></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label>Título / Especialidade<input type="text" name="specialty" value="${escapeHtml(p.specialty||'')}"></label></div>
+          <div class="form-group"><label>RQE<input type="text" name="rqe" value="${escapeHtml(p.rqe||'')}"></label></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label>CRM – UF *<input type="text" name="crm_uf" required maxlength="2" value="${escapeHtml(p.crm_uf||'')}"></label></div>
+          <div class="form-group"><label>CRM – Número *<input type="text" name="crm_number" required value="${escapeHtml(p.crm_number||'')}"></label></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label>Endereço<input type="text" name="address" value="${escapeHtml(p.address||'')}"></label></div>
+          <div class="form-group"><label>Cidade<input type="text" name="city" value="${escapeHtml(p.city||'')}"></label></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-group"><label>Telefone<input type="text" name="phone" value="${escapeHtml(p.phone||'')}"></label></div>
+          <div class="form-group"><label>E-mail<input type="email" name="email" value="${escapeHtml(p.email||'')}"></label></div>
+        </div>
+        <div class="form-row"><label>Site<input type="url" name="website" value="${escapeHtml(p.website||'')}"></label></div>
+      </form>`,
+    footHTML: `
+      <div style="flex:1"></div>
+      <button class="btn-secondary" data-close>Cancelar</button>
+      <button class="btn-primary" id="btn-save-profile">Salvar</button>`,
+    onMount: (m) => {
+      m.querySelector('#btn-save-profile').onclick = async () => {
+        const btn = m.querySelector('#btn-save-profile');
+        btn.disabled = true; btn.textContent = 'Salvando…';
+        const fd = new FormData(m.querySelector('#form-profile-modal'));
+        const payload = {};
+        for (const [k, v] of fd.entries()) payload[k] = v.trim() || null;
+        const { data, error } = await sb.from('doctor_profiles')
+          .upsert({ id: currentUser.id, ...payload }).select().single();
+        btn.disabled = false; btn.textContent = 'Salvar';
+        if (error) {
+          m.querySelector('#msg-profile-modal').innerHTML =
+            `<div class="msg error">${escapeHtml(error.message)}</div>`;
+          return;
+        }
+        currentProfile = data;
+        loadDoctorProfile(data);
+        // atualiza o nome no topbar
+        const firstName = (data.display_name || '').split(' ')[0] || 'Médico';
+        const el = document.querySelector('.topbar-user');
+        if (el) el.textContent = `Dr(a). ${firstName}`;
+        closeModal();
+        showToast('Perfil atualizado.');
+      };
+    }
   });
 }
 
