@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificação de Assinatura Digital</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --navy:       #0d1b2a;
+      --steel:      #2e4a6b;
+      --gold:       #b89a5e;
+      --gold-light: #d4b97a;
+      --green:      #2d9e6b;
+      --red:        #c44;
+      --gray:       #8a9bb0;
+      --bg:         #f5f2ee;
+      --white:      #fff;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 60px;
+    }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 32px; }
+    .header-brand {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin-bottom: 6px;
+    }
+    .header h1 { font-size: 1.25rem; font-weight: 600; color: var(--navy); }
+    .header-sub { font-size: 0.82rem; color: var(--gray); margin-top: 4px; }
+    .gold-line { width: 48px; height: 2px; background: var(--gold); margin: 14px auto; }
+
+    /* Card */
+    .card {
+      background: var(--white);
+      border: 1px solid #dde4ee;
+      max-width: 600px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Status banner */
+    .status-banner {
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-banner.valid   { background: #f0faf5; border-bottom: 2px solid var(--green); }
+    .status-banner.invalid { background: #fdecea; border-bottom: 2px solid var(--red); }
+    .status-banner.loading { background: #f0f4fa; border-bottom: 2px solid #aac; }
+    .status-icon { font-size: 2rem; line-height: 1; }
+    .status-title { font-size: 1.05rem; font-weight: 700; letter-spacing: 0.04em; }
+    .status-banner.valid   .status-title { color: #1a6b47; }
+    .status-banner.invalid .status-title { color: #9b2020; }
+    .status-banner.loading .status-title { color: var(--steel); }
+    .status-sub { font-size: 0.82rem; color: var(--gray); margin-top: 3px; }
+
+    /* Fields */
+    .fields { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray);
+      font-weight: 600;
+    }
+    .field-value { font-size: 0.92rem; color: var(--navy); word-break: break-all; }
+    .field-value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: var(--steel);
+    }
+    .divider { border: none; border-top: 1px solid #edf0f5; margin: 4px 0; }
+
+    /* ICP badge */
+    .icp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--navy);
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    .icp-badge span { color: var(--gold-light); }
+
+    /* Footer */
+    .card-footer {
+      padding: 14px 28px;
+      background: #f8f9fc;
+      border-top: 1px solid #edf0f5;
+      font-size: 0.75rem;
+      color: var(--gray);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #dde4ee;
+      border-top-color: var(--steel);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* No-id state */
+    .no-id {
+      max-width: 480px;
+      text-align: center;
+      padding: 48px 24px;
+      background: var(--white);
+      border: 1px solid #dde4ee;
+    }
+    .no-id-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .no-id h2 { font-size: 1rem; margin-bottom: 8px; }
+    .no-id p { font-size: 0.84rem; color: var(--gray); }
+
+    /* Search form */
+    .search-form {
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 8px;
+    }
+    .search-form input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #c8d4e4;
+      font-size: 0.88rem;
+      font-family: 'Courier New', monospace;
+      color: var(--navy);
+      background: var(--white);
+      outline: none;
+    }
+    .search-form input:focus { border-color: var(--steel); }
+    .search-form input::placeholder { font-family: 'Segoe UI', sans-serif; color: var(--gray); }
+    .search-form button {
+      padding: 10px 20px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .search-form button:hover { background: var(--steel); }
+
+    @media (max-width: 480px) {
+      .fields { padding: 18px 16px; }
+      .status-banner { padding: 16px; }
+      .card-footer { padding: 12px 16px; }
+      .search-form { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">Documentos médicos</div>
+  <h1 id="hdr-doctor">Prontuário Neurológico</h1>
+  <div class="header-sub" id="hdr-crm"></div>
+  <div class="gold-line"></div>
+  <div class="header-brand">Verificação de Assinatura Digital</div>
+</div>
+
+<form class="search-form" id="search-form">
+  <input type="text" id="id-input"
+         placeholder="Cole ou digite o ID de verificação do documento…"
+         autocomplete="off" spellcheck="false">
+  <button type="submit">Verificar</button>
+</form>
+
+<div id="root"></div>
+
+<script>
+  const SUPABASE_URL      = 'https://yhyjjnuubuprmjlpjhjs.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloeWpqbnV1YnVwcm1qbHBqaGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NjU5OTYsImV4cCI6MjA5NTA0MTk5Nn0.NnM-T4W2uBpoIkKLU9bST_g-2A7xtjuUS2J8aWO9uRk';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const root = document.getElementById('root');
+
+  /* ─── formatadores ─── */
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  }
+  function cleanCN(cn) {
+    return (cn || '').replace(/:\d[\d./-]*.*$/, '').trim();
+  }
+
+  const TYPE_LABELS = {
+    receita_simples:  'Receituário Simples',
+    receita_especial: 'Receituário Especial (Controlado)',
+    exames:           'Solicitação de Exames',
+    atestado:         'Atestado Médico',
+    laudo:            'Laudo Médico',
+    relatorio:        'Relatório Médico',
+    consulta:         'Consulta Ambulatorial',
+    documento:        'Documento Médico',
+  };
+
+  function field(label, value, mono = false) {
+    return `
+      <div class="field-group">
+        <div class="field-label">${label}</div>
+        <div class="field-value${mono ? ' mono' : ''}">${value || '—'}</div>
+      </div>`;
+  }
+
+  function escHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ─── atualiza cabeçalho com dados do médico signatário ─── */
+  function updateHeader(sig) {
+    if (sig?.doctor_name) {
+      document.getElementById('hdr-doctor').textContent = sig.doctor_name;
+    }
+    if (sig?.doctor_crm) {
+      document.getElementById('hdr-crm').textContent = sig.doctor_crm;
+    }
+  }
+
+  /* ─── renders ─── */
+  function renderLoading() {
+    root.innerHTML = `
+      <div class="card">
+        <div class="status-banner loading">
+          <div class="spinner"></div>
+          <div>
+            <div class="status-title">Verificando assinatura…</div>
+            <div class="status-sub">Consultando o registro de assinaturas.</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderValid(sig) {
+    updateHeader(sig);
+    const cn         = escHtml(cleanCN(sig.cert_cn));
+    const issuer     = escHtml(sig.cert_issuer || '—');
+    const serial     = escHtml(sig.cert_serial || '—');
+    const validUntil = fmtDate(sig.cert_valid_until);
+    const signedAt   = fmtDateTime(sig.signed_at);
+    const docLabel   = escHtml(TYPE_LABELS[sig.doc_type] || sig.doc_type || 'Documento');
+    const filename   = escHtml(sig.doc_filename || '—');
+    const hash       = escHtml(sig.doc_hash || '—');
+    const doctorName = escHtml(sig.doctor_name || '—');
+    const doctorCrm  = escHtml(sig.doctor_crm  || '');
+
+    root.innerHTML = `
+      <div class="card">
+        <div class="status-banner valid">
+          <div class="status-icon">✅</div>
+          <div>
+            <div class="status-title">ASSINATURA DIGITAL VÁLIDA</div>
+            <div class="status-sub">Este documento possui assinatura eletrônica avançada — ICP-Brasil</div>
+          </div>
+        </div>
+        <div class="fields">
+          ${field('Médico signatário', doctorName + (doctorCrm ? ' — ' + doctorCrm : ''))}
+          ${field('Signatário (certificado)', cn)}
+          ${field('Data e hora da assinatura', signedAt)}
+          ${field('Tipo de documento', docLabel)}
+          ${field('Arquivo', filename)}
+          <hr class="divider">
+          ${field('Certificado — Emissor', issuer)}
+          ${field('Certificado — Série', serial, true)}
+          ${field('Certificado — Válido até', validUntil)}
+          <hr class="divider">
+          ${field('Hash SHA-256 do documento', hash, true)}
+          ${field('ID de verificação', sig.id, true)}
+          <hr class="divider">
+          <div class="field-group">
+            <div class="field-label">Conformidade legal</div>
+            <div class="field-value" style="font-size:0.82rem;color:#4a5a70;line-height:1.5;">
+              MP nº 2.200-2/2001 · Resolução CFM 2.299/2021 · Lei 14.063/2020
+            </div>
+          </div>
+          <div><div class="icp-badge"><span>ICP</span> Brasil &nbsp;+</div></div>
+        </div>
+        <div class="card-footer">
+          Documento emitido por <strong>${doctorName}</strong>${doctorCrm ? ' — ' + doctorCrm : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderNotFound(id) {
+    root.innerHTML = `
+      <div class="card">
+        <div class="status-banner invalid">
+          <div class="status-icon">❌</div>
+          <div>
+            <div class="status-title">ASSINATURA NÃO ENCONTRADA</div>
+            <div class="status-sub">Nenhum registro foi localizado para este ID.</div>
+          </div>
+        </div>
+        <div class="fields">
+          ${field('ID consultado', escHtml(id), true)}
+          <div class="field-group">
+            <div class="field-value" style="font-size:0.84rem;color:#666;line-height:1.6;">
+              O documento pode não ter sido assinado digitalmente, ou o ID de verificação
+              foi alterado. Se acredita que este documento é autêntico, entre em contato
+              diretamente com o médico emissor.
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">Verificação de Assinatura Digital — Prontuário Neurológico</div>
+      </div>`;
+  }
+
+  function renderNoId() {
+    root.innerHTML = `
+      <div class="no-id">
+        <div class="no-id-icon">🔍</div>
+        <h2>Nenhum ID de verificação informado</h2>
+        <p>Esta página verifica a autenticidade de documentos médicos assinados digitalmente.
+           Escaneie o QR code presente no rodapé do documento para acessar a verificação.</p>
+      </div>`;
+  }
+
+  /* ─── busca principal ─── */
+  async function verify(idOverride) {
+    const params = new URLSearchParams(window.location.search);
+    const id = idOverride || params.get('id');
+
+    const input = document.getElementById('id-input');
+    if (input && params.get('id') && !idOverride) input.value = params.get('id');
+
+    if (!id) { renderNoId(); return; }
+
+    renderLoading();
+
+    const { data, error } = await sb
+      .from('document_signatures')
+      .select('id, cert_cn, cert_issuer, cert_serial, cert_valid_until, signed_at, doc_type, doc_filename, doc_hash, doctor_name, doctor_crm')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !data) { renderNotFound(id); return; }
+    renderValid(data);
+  }
+
+  document.getElementById('search-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const val = document.getElementById('id-input').value.trim();
+    if (!val) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('id', val);
+    window.history.pushState({}, '', url.toString());
+    verify(val);
+  });
+
+  verify();
+</script>
+</body>
+</html>

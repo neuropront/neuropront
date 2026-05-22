@@ -4759,6 +4759,8 @@ async function storeSigSupabase(verifyId, hashHex, sigB64, filename, meta) {
       source_table:     meta.sourceTable  || null,
       source_id:        meta.sourceId     || null,
       created_by:       currentUser?.id   || null,
+      doctor_name:      dp('name')        || null,
+      doctor_crm:       dp('crm')         || null,
     });
     if (error) console.warn('[ICP] falha ao registrar assinatura:', error.message);
   } catch (err) {
