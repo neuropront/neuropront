@@ -1242,9 +1242,21 @@ function findMedication(rawValue) {
 
 async function onSignedIn(user) {
   currentUser = user;
-  const { data: profile, error } = await sb.from('doctor_profiles').select('*').eq('id', user.id).single();
 
-  // Profile incomplete or missing → show setup view
+  // Busca ou cria o perfil do médico
+  let { data: profile, error } = await sb
+    .from('doctor_profiles').select('*').eq('id', user.id).maybeSingle();
+
+  // Se não existe ainda, cria uma linha vazia
+  if (!profile && !error) {
+    const { data: created } = await sb
+      .from('doctor_profiles')
+      .insert({ id: user.id })
+      .select().single();
+    profile = created;
+  }
+
+  // Profile incompleto → tela de setup
   if (!profile || !profile.onboarding_done || !profile.crm_number) {
     currentProfile = profile || {};
     hide('view-loading');
@@ -1252,8 +1264,8 @@ async function onSignedIn(user) {
     show('view-setup');
     if (profile) {
       const f = $('form-setup');
-      // mapeamento nome_campo_form → coluna real do BD
-      ['display_name','legal_name','specialty','crm_uf','crm_number','rqe','address','city','phone','email','website'].forEach(k => {
+      ['display_name','legal_name','specialty','crm_uf','crm_number',
+       'rqe','address','city','phone','email','website'].forEach(k => {
         const el = f.querySelector(`[name="${k}"]`);
         if (el && profile[k]) el.value = profile[k];
       });
@@ -1264,7 +1276,8 @@ async function onSignedIn(user) {
   currentProfile = profile;
   loadDoctorProfile(profile);
 
-  const firstName = (profile.display_name || '').split(' ')[0];
+  const displayName = profile.display_name || profile.email || user.email || '';
+  const firstName   = displayName.split(' ')[0] || 'Médico';
   $('topbar-actions').innerHTML = `
     <button class="btn-icp" id="btn-pending-global" title="Ver todos os documentos pendentes de assinatura" style="display:none;">⏳ <span id="pending-count">0</span> pendentes</button>
     <button class="btn-icp" id="btn-icp" title="Carregar certificado ICP-Brasil para assinar documentos">🔏 ICP-Brasil</button>
